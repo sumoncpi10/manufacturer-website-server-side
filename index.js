@@ -26,6 +26,9 @@ run().catch(console.dir);
 app.get('/', (req, res) => {
     res.send('Hello Form ATZ!')
 })
+app.get('/user', (req, res) => {
+    res.send('Hello Form User!')
+})
 
 app.listen(port, () => {
     console.log(`ATZ app listening on port ${port}`)
