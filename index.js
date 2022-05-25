@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -18,12 +18,19 @@ async function run() {
         await client.connect();
         const userCollection = client.db('atztoolsmanufacturing').collection('users');
         const productCollection = client.db('atztoolsmanufacturing').collection('products');
+        const OrderCollection = client.db('atztoolsmanufacturing').collection('orders');
 
         app.get('/', (req, res) => {
             res.send('Hello Form ATZ!')
         });
 
-
+        // get product 
+        app.get('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const product = await productCollection.findOne(query);
+            res.send(product);
+        })
         // get Users 
         app.get('/user', async (req, res) => {
             const query = {};
@@ -57,6 +64,13 @@ async function run() {
             const products = await cursor.toArray();
             res.send(products)
         });
+        // add Order 
+        app.post('/addorder', async (req, res) => {
+            const newOrder = req.body;
+            console.log('adding new order', newOrder);
+            const result = await OrderCollection.insertOne(newOrder);
+            res.send(result);
+        })
     }
     finally {
 
