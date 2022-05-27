@@ -3,8 +3,8 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const stripe = require('stripe')('sk_test_51L3iGjFfyC4fpy8Fcdn6NwHgz48Wb5BIsnnYHUJHwLxleNiqIaftYtP0KP7acqI2GMShn4gKtkkHwsgwCveYVAK40074nbcsRZ');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// const stripe = require('stripe')('sk_test_51L3iGjFfyC4fpy8Fcdn6NwHgz48Wb5BIsnnYHUJHwLxleNiqIaftYtP0KP7acqI2GMShn4gKtkkHwsgwCveYVAK40074nbcsRZ');
 
 
 const app = express();
@@ -60,6 +60,7 @@ async function run() {
         //     const users = await userCollection.find().toArray();
         //     res.send(users);
         // });
+
         // update user 
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -127,18 +128,19 @@ async function run() {
             res.send(result);
         });
 
-        // Payment 
-        // app.post('/create-payment-intent', async (req, res) => {
-        //     const service = req.body;
-        //     const price = service.price;
-        //     const amount = price * 100;
-        //     const paymentIntent = await stripe.paymentIntents.create({
-        //         amount: amount,
-        //         currency: 'usd',
-        //         payment_method_types: ['card']
-        //     });
-        //     res.send({ clientSecret: paymentIntent.client_secret })
-        // });
+        // Payment
+        app.post('/create-payment-intent', async (req, res) => {
+            const service = req?.body;
+            const price = service?.price;
+            const amount = price * 100;
+            console.log(amount)
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent?.client_secret })
+        });
 
         app.get('/order', async (req, res) => {
             const email = req.query.email;
