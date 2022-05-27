@@ -38,6 +38,35 @@ async function run() {
         const productCollection = client.db('atztoolsmanufacturing').collection('products');
         const OrderCollection = client.db('atztoolsmanufacturing').collection('orders');
 
+        // Payment
+        // app.post('/create-payment-intent', async (req, res) => {
+        //     const service = req?.body;
+        //     const price = service?.price;
+        //     const amount = price * 100;
+        //     console.log(amount);
+        //     const paymentIntent = await stripe.paymentIntents.create({
+        //         amount: amount,
+        //         currency: 'usd',
+        //         payment_method_types: ['card']
+        //     });
+        //     res.send({ clientSecret: paymentIntent?.client_secret })
+        // });
+
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const service = req.body;
+            const price = service.price;
+            const amount = price;
+            console.log(amount);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
+
+
         app.get('/', (req, res) => {
             res.send('Hello Form ATZ!')
         });
@@ -130,19 +159,6 @@ async function run() {
             res.send(result);
         });
 
-        // Payment
-        app.post('/create-payment-intent', async (req, res) => {
-            const service = req?.body;
-            const price = service?.price;
-            const amount = price * 100;
-            console.log(amount)
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            });
-            res.send({ clientSecret: paymentIntent?.client_secret })
-        });
 
         app.get('/order', async (req, res) => {
             const email = req.query.email;
