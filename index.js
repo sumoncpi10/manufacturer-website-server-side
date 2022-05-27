@@ -16,6 +16,7 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.o83fx.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -40,6 +41,19 @@ async function run() {
         app.get('/', (req, res) => {
             res.send('Hello Form ATZ!')
         });
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const service = req.body;
+            const price = service.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent.client_secret })
+        });
+
 
         // get product 
         app.get('/product/:id', async (req, res) => {
@@ -128,19 +142,7 @@ async function run() {
             res.send(result);
         });
 
-        // Payment
-        app.post('/create-payment-intent', async (req, res) => {
-            const service = req?.body;
-            const price = service?.price;
-            const amount = price * 100;
-            console.log(amount)
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: amount,
-                currency: 'usd',
-                payment_method_types: ['card']
-            });
-            res.send({ clientSecret: paymentIntent?.client_secret })
-        });
+
 
         app.get('/order', async (req, res) => {
             const email = req.query.email;
