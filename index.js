@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// const stripe = require('stripe')('sk_test_51L3iGjFfyC4fpy8Fcdn6NwHgz48Wb5BIsnnYHUJHwLxleNiqIaftYtP0KP7acqI2GMShn4gKtkkHwsgwCveYVAK40074nbcsRZ');
+
 
 
 const app = express();
@@ -37,39 +37,16 @@ async function run() {
         const userCollection = client.db('atztoolsmanufacturing').collection('users');
         const productCollection = client.db('atztoolsmanufacturing').collection('products');
         const OrderCollection = client.db('atztoolsmanufacturing').collection('orders');
-
-        // Payment
-        // app.post('/create-payment-intent', async (req, res) => {
-        //     const service = req?.body;
-        //     const price = service?.price;
-        //     const amount = price * 100;
-        //     console.log(amount);
-        //     const paymentIntent = await stripe.paymentIntents.create({
-        //         amount: amount,
-        //         currency: 'usd',
-        //         payment_method_types: ['card']
-        //     });
-        //     res.send({ clientSecret: paymentIntent?.client_secret })
-        // });
-
-
-        app.post('/createpaymentintent', verifyJWT, async (req, res) => {
-            const service = req.body;
-            const price = service.price;
-            // const amount = price;
-            console.log(amount);
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: price,
-                currency: 'usd',
-                payment_method_types: ['card']
-            });
-            res.send({ clientSecret: paymentIntent?.client_secret })
-        });
-
+        const paymentCollection = client.db('atztoolsmanufacturing').collection('payments');
+        const reviewCollection = client.db('atztoolsmanufacturing').collection('reviews');
 
         app.get('/', (req, res) => {
             res.send('Hello Form ATZ!')
         });
+
+
+
+
 
 
         // get product 
@@ -159,7 +136,15 @@ async function run() {
             res.send(result);
         });
 
+        // get all order 
 
+        app.get('/orders', async (req, res) => {
+            const query = {};
+            const cursor = OrderCollection.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders)
+        });
+        // get order by email 
         app.get('/order', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
@@ -173,6 +158,22 @@ async function run() {
             const product = await OrderCollection.findOne(query);
             res.send(product);
         })
+        // delivered 
+        app.patch('/delivered/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    delivered: true,
+                    // transactionId: payment.transactionId
+                }
+            }
+
+            // const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await OrderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedOrder);
+        })
         // Delete Order 
         app.delete('/order/:id', async (req, res) => {
             const id = req.params.id;
@@ -180,6 +181,58 @@ async function run() {
             const result = await OrderCollection.deleteOne(query);
             res.send(result);
         })
+        // Payment
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const service = req.body;
+            const price = service.price;
+            // const amount = price;
+            // console.log(price);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: price,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+            res.send({ clientSecret: paymentIntent?.client_secret })
+        });
+        // paid 
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await OrderCollection.updateOne(filter, updatedDoc);
+            res.send(updatedOrder);
+        });
+        // add Order 
+        app.post('/reviewAdd', async (req, res) => {
+            const newReview = req.body;
+            console.log('adding new Review', newReview);
+            const result = await reviewCollection.insertOne(newReview);
+            res.send(result);
+        });
+        // get all Review 
+
+        app.get('/reviewsall', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews)
+        });
+        // get 3 Review 
+
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.limit(3).toArray();
+            res.send(reviews)
+        });
     }
     finally {
 
