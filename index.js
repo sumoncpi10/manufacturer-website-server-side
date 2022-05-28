@@ -56,12 +56,20 @@ async function run() {
             const product = await productCollection.findOne(query);
             res.send(product);
         })
+
+        // get single user 
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const product = await userCollection.findOne(query);
+            res.send(product);
+        })
         // get Users
         app.get('/user', verifyJWT, async (req, res) => {
             const query = {};
             const cursor = userCollection.find(query);
             const users = await cursor.toArray();
-            res.send(users)
+            res.send(users);
         })
 
         // app.get('/user', verifyJWT, async (req, res) => {
@@ -73,6 +81,7 @@ async function run() {
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
+            console.log(user);
             const filter = { email: email };
             const options = { upsert: true };
             const updateDoc = {
